@@ -430,8 +430,9 @@ let rec cleanOperationName (operationName: string) =
             |> String.concat ""
             |> cleanOperationName
     else
-        let invalidChars = [| '-'; '#'; '_'; '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '"'; '`' |]
+        let invalidChars = [| '-'; '#'; '_'; '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '"'; '`'; ' ' |]
         operation.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries)
+        |> Array.filter (not << String.IsNullOrWhiteSpace)
         |> Array.map capitalize
         |> String.concat ""
 
