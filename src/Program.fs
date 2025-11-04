@@ -807,7 +807,8 @@ let rec createRecordFromSchema (recordName: string) (schema: OpenApiSchema) (vis
             None
         else
         let isEnum = isEnumType propertyType
-        let required = schema.Required.Contains propertyName
+        // A field is required only if it's in Required AND not marked as nullable
+        let required = schema.Required.Contains propertyName && not propertyType.Nullable
         let isObjectArray =
             propertyType.Type = "array"
             && isNotNull propertyType.Items
