@@ -105,16 +105,16 @@ type RequestPart =
     static member query(key: string, values: int list) = Query(key, OpenApiValue.List [ for value in values -> OpenApiValue.Int value ])
     static member query(key: string, value: int64) = Query(key, OpenApiValue.Int64 value)
     static member query(key: string, value: string) = Query(key, OpenApiValue.String value)
-    static member query(key: string, value: string option) = 
-        match value with 
+    static member query(key: string, value: string option) =
+        match value with
         | Some text -> Query(key, OpenApiValue.String text)
         | None -> Ignore
-    static member query(key: string, value: int option) = 
-        match value with 
+    static member query(key: string, value: int option) =
+        match value with
         | Some number -> Query(key, OpenApiValue.Int number)
         | None -> Ignore
-    static member query(key: string, value: bool option) = 
-        match value with 
+    static member query(key: string, value: bool option) =
+        match value with
         | Some flag -> Query(key, OpenApiValue.Bool flag)
         | None -> Ignore
     static member query(key: string, value: double option) =
@@ -130,8 +130,8 @@ type RequestPart =
         | Some instance ->
             let format = (^a: (member Format: unit -> string) (instance))
             Query(key, OpenApiValue.String format)
-    static member query(key: string, value: int64 option) = 
-        match value with 
+    static member query(key: string, value: int64 option) =
+        match value with
         | Some number -> Query(key, OpenApiValue.Int64 number)
         | None -> Ignore
 
@@ -377,7 +377,7 @@ module OpenApiHttp =
     let postBinaryAsync (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
         sendBinaryAsync httpClient HttpMethod.Post path parts {cancellationParameter}
 
-    let postBinary (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} = 
+    let postBinary (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
         postBinaryAsync httpClient path parts {cancellationParameter}
         {convertSync}
 
@@ -413,7 +413,7 @@ module OpenApiHttp =
         sendAsync httpClient (HttpMethod "PATCH") path parts {cancellationParameter}
 
     let patch (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
-        patchAsync httpClient path parts {cancellationParameter} 
+        patchAsync httpClient path parts {cancellationParameter}
         {convertSync}
 
     let patchBinaryAsync (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
@@ -422,10 +422,10 @@ module OpenApiHttp =
     let patchBinary (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
         patchBinaryAsync httpClient path parts {cancellationParameter}
         {convertSync}
-    
+
     let headAsync (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
         sendAsync httpClient (HttpMethod "HEAD") path parts {cancellationParameter}
-         
+
     let head (httpClient: HttpClient) (path: string) (parts: RequestPart list) {cancellationArgument} =
         headAsync httpClient path parts {cancellationParameter}
         {convertSync}
@@ -454,7 +454,7 @@ let library isTask projectName =
         then "response.Content.ReadAsStringAsync()"
         else "Async.AwaitTask(response.Content.ReadAsStringAsync())"
 
-    let getBinaryContent = 
+    let getBinaryContent =
         if isTask
         then "response.Content.ReadAsByteArrayAsync()"
         else "Async.AwaitTask(response.Content.ReadAsByteArrayAsync())"
@@ -840,7 +840,7 @@ module OpenApiHttp =
 
     let applyHeaders (parts: RequestPart list) (httpRequest: HttpRequest) =
         parts
-        |> List.choose (function 
+        |> List.choose (function
             | RequestPart.Header (s, v) ->
                 Fable.SimpleHttp.Header (s, serializeValue v)
                 |> Some
