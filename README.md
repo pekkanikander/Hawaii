@@ -27,7 +27,7 @@ Create a configuration file called `hawaii.json` with the following shape:
     "schema": <schema>,
     "project": <project>,
     "output": <output>,
-    ["target"]: <"fsharp" | "fable">
+    ["target"]: <"fsharp" | "fsharp-native" | "fable">
     ["synchronous"]: <true | false>,
     ["asyncReturnType"]: <"async" | "task">,
     ["resolveReferences"]: <true | false>,
@@ -41,7 +41,10 @@ Where
  - `<project>` is the name of the project that will get generated
  - `<output>` is a relative path to the output directory where the project will be generated. (Note: this directory is deleted and re-generated when you run `hawaii`)
  - `<synchronous>` is an optional flag that determines whether hawaii should generate client methods that run http requests synchronously. This is useful when used inside console applications. (set to false by default)
- - `<target>` specifies whether hawaii should generate a client for F# on dotnet  (default) or a Fable client
+- `<target>` specifies the generated client runtime:
+  - `fsharp` (default): F#/.NET client with Fable-compatible JSON converter behavior.
+  - `fsharp-native`: F#/.NET client that preserves native `JToken` values during JSON serialization (recommended when payloads contain raw JSON fragments such as OpenAPI `object`/`JToken` fields).
+  - `fable`: Fable/browser client.
  - `<asyncReturnType>` is an option to determine whether hawaii should generate client methods that return `Async<'T>` when set to "async" (default) or `Task<'T>` when set to "task" (this option is irrelevant when the `synchronous` option is set to `true`)
  - `<resolveReferences>` determines whether hawaii will attempt to resolve external references via schema pre-processing. This is set to `false` by default but sometimes an OpenApi schema is scattered into multiple schemas across a repository and this might help with the resolution.
  - `<emptyDefintions>` determines what hawaii should do when encountering a global type definition without schema information. When set to "ignore" (default) hawaii will generate the global type. However, sometimes these global types are still referenced from other types or definitions, in which case the setting this option to "free-form" will generate a type abbreviation for the empty schema equal to a free form object (`JToken` when targetting F# or `obj` when targetting Fable)

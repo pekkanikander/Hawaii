@@ -7,13 +7,16 @@ open System.Net.Http
 open System.Globalization
 open System.Collections.Generic
 open System.Text
-open Fable.Remoting.Json
+{jsonConverterOpen}
 open System.Threading
 {taskLibrary}
 
 module Serializer =
     open Newtonsoft.Json
     open Microsoft.FSharp.Reflection
+    open Newtonsoft.Json.Linq
+
+    {jTokenConverterDefinition}
 
     /// A tolerant converter for F# [<StringEnum>] unions on .NET.
     /// It matches incoming strings against union cases using the case's
@@ -68,9 +71,10 @@ module Serializer =
 
     let settings =
         let s = JsonSerializerSettings()
+        {jTokenConverterRegistration}
         // Prefer tolerant enum mapping, then fall back to FableJsonConverter
         s.Converters.Add(TolerantStringEnumConverter() :> JsonConverter)
-        s.Converters.Add(FableJsonConverter() :> JsonConverter)
+        {jsonConverterRegistration}
         s.DateParseHandling <- DateParseHandling.None
         s.NullValueHandling <- NullValueHandling.Ignore
         s
@@ -438,7 +442,7 @@ module OpenApiHttp =
         {convertSync}
 """
 
-let library isTask projectName =
+let library isTask projectName includeFableJsonConverter includeJTokenPassthrough =
     let convertSync =
         if isTask
         then "|> Async.AwaitTask |> Async.RunSynchronously"
@@ -461,6 +465,34 @@ let library isTask projectName =
 
     content
         .Replace("{projectName}", projectName)
+        .Replace("{jTokenConverterDefinition}",
+            if includeJTokenPassthrough then
+                """type JTokenPassthroughConverter() =
+        inherit JsonConverter()
+        override _.CanConvert(t: System.Type) =
+            typeof<JToken>.IsAssignableFrom(t)
+        override _.WriteJson(writer: JsonWriter, value: obj, serializer: JsonSerializer) =
+            if isNull value then
+                writer.WriteNull()
+            else
+                match value with
+                | :? JToken as token -> token.WriteTo(writer)
+                | _ -> serializer.Serialize(writer, value)
+        override _.ReadJson(reader: JsonReader, objectType: System.Type, existingValue: obj, serializer: JsonSerializer) : obj =
+            if reader.TokenType = JsonToken.Null then
+                null
+            else
+                let token = JToken.ReadFrom(reader)
+                if objectType = typeof<JToken> then
+                    token :> obj
+                elif objectType.IsAssignableFrom(token.GetType()) then
+                    token.ToObject(objectType) :> obj
+                else
+                    token.ToObject(objectType, serializer) :> obj"""
+            else "")
+        .Replace("{jTokenConverterRegistration}", if includeJTokenPassthrough then "s.Converters.Add(JTokenPassthroughConverter() :> JsonConverter)" else "")
+        .Replace("{jsonConverterOpen}", if includeFableJsonConverter then "open Fable.Remoting.Json" else "")
+        .Replace("{jsonConverterRegistration}", if includeFableJsonConverter then "s.Converters.Add(FableJsonConverter() :> JsonConverter)" else "")
         .Replace("{taskLibrary}", if isTask then "open FSharp.Control.Tasks" else "")
         .Replace("{asyncBuilder}", if isTask then "task" else "async")
         .Replace("{cancellationArgument}", "(cancellationToken: CancellationToken option)")
